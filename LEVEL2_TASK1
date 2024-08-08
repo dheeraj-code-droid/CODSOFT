@@ -1,0 +1,106 @@
+LEVEL 2 :-
+
+Task 1 :- Build a job board website where employers can post job openings and job seekers can search and apply for jobs. Use React, Node.js, and a database like MongoDB or PostgreSQL.
+ 
+1. Set up project
+(i) frontend setup :-
+npx create-react-app job-board
+cd job-board
+
+
+(ii) backend setup :-
+mkdir server
+cd server
+npm init -y
+npm install express mongoose cors bcryptjs jsonwebtoken nodemailer
+
+
+2. Database design
+(i) javascript :-
+// User Schema
+const UserSchema = new mongoose.Schema({
+  username: String,
+  email: { type: String, unique: true },
+  password: String,
+  role: { type: String, enum: ['employer', 'candidate'] },
+});
+
+// Job Schema
+const JobSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  requirements: String,
+  company: String,
+  location: String,
+  salary: String,
+  createdAt: { type: Date, default: Date.now },
+  employerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+});
+
+// Application Schema
+const ApplicationSchema = new mongoose.Schema({
+  jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' },
+  candidateId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  resume: String,
+  status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+  createdAt: { type: Date, default: Date.now },
+});
+
+
+(ii) home page:-
+// HomePage.jsx
+import React, { useEffect, useState } from 'react';
+import JobListing from './JobListing';
+
+const HomePage = () => {
+  const [jobs, setJobs] = useState([]);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      const response = await fetch('/api/jobs');
+      const data = await response.json();
+      setJobs(data);
+    };
+
+    fetchJobs();
+  }, []);
+
+  return (
+    <div>
+      <h1>Welcome to Job Board</h1>
+      <h2>Featured Jobs</h2>
+      {jobs.map(job => (
+        <JobListing key={job._id} job={job} />
+      ))}
+    </div>
+  );
+};
+
+export default HomePage;
+
+
+(iii) email notification :-
+// In your application submission handler
+const sendEmail = (email, jobTitle) => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: 'Application Confirmation',
+    text: `You have successfully applied for the ${jobTitle} position.`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log(error);
+    }
+    console.log('Email sent: ' + info.response);
+  });
+};
