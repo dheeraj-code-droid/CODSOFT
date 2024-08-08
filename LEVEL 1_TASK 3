@@ -1,0 +1,151 @@
+Task 3 :-  To create a basic calculator using CSS, HTML, and JavaScript, you'll need to implement an
+ interactive interface with buttons for addition, subtraction, multiplication, and division
+ operations. The calculator should have a display screen to show user input and results. Utilize
+ CSS grid system for button alignments. Use event listeners, if-else statements, operators, and
+ loops to handle user input and perform calculations. This project requires some skill but can be
+ done with basic knowledge of these technologies..
+
+
+(i) html :-
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calculator">
+        <input type="text" id="display" disabled />
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button onclick="setOperation('/')">/</button>
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button onclick="setOperation('*')">*</button>
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button onclick="setOperation('-')">-</button>
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="calculateResult()">=</button>
+            <button onclick="setOperation('+')">+</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+(ii) css styles :- 
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+    margin: 0;
+}
+
+.calculator {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    width: 300px;
+}
+
+#display {
+    width: 100%;
+    height: 40px;
+    font-size: 2em;
+    text-align: right;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+button {
+    padding: 20px;
+    font-size: 1.5em;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+  
+
+(iii) java :-  
+
+
+let displayValue = '';
+let operation = '';
+let firstOperand = null;
+
+function appendToDisplay(value) {
+    displayValue += value;
+    document.getElementById('display').value = displayValue;
+}
+
+function clearDisplay() {
+    displayValue = '';
+    operation = '';
+    firstOperand = null;
+    document.getElementById('display').value = '';
+}
+
+function setOperation(op) {
+    if (displayValue === '') return; // Prevent setting operation if display is empty
+    if (firstOperand === null) {
+        firstOperand = parseFloat(displayValue);
+    } else if (operation) {
+        firstOperand = calculate(firstOperand, parseFloat(displayValue), operation);
+    }
+    operation = op;
+    displayValue = '';
+}
+
+function calculateResult() {
+    if (firstOperand === null || displayValue === '') return; // Prevent calculation if there's no operand
+    const secondOperand = parseFloat(displayValue);
+    const result = calculate(firstOperand, secondOperand, operation);
+    displayValue = result.toString();
+    operation = '';
+    firstOperand = null;
+    document.getElementById('display').value = displayValue;
+}
+
+function calculate(a, b, op) {
+    switch (op) {
+        case '+':
+            return a + b;
+        case '-':
+            return a - b;
+        case '*':
+            return a * b;
+        case '/':
+            return a / b;
+        default:
+            return b;
+    }
+}
