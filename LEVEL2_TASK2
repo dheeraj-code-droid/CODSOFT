@@ -1,0 +1,290 @@
+TASK 2 :- ONLINE QUIZ MAKER.
+
+1. Set up project
+(i) frontend setup :-
+npx create-react-app quiz-app
+cd quiz-app
+
+
+(ii) backend setup :-
+mkdir server
+cd server
+npm init -y
+npm install express mongoose cors bcryptjs jsonwebtoken
+
+
+2. DATABASE DESIGN
+
+
+// User Schema
+const UserSchema = new mongoose.Schema({
+  username: { type: String, unique: true },
+  email: { type: String, unique: true },
+  password: String,
+});
+
+// Quiz Schema
+const QuizSchema = new mongoose.Schema({
+  title: String,
+  questions: [
+    {
+      question: String,
+      options: [String],
+      correctAnswer: String,
+    },
+  ],
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now },
+});
+
+
+3. HOME PAGE SETUP :-
+
+// HomePage.jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const HomePage = () => {
+  return (
+    <div>
+      <h1>Welcome to the Online Quiz Maker</h1>
+      <Link to="/create-quiz">Create a Quiz</Link>
+      <Link to="/quiz-list">Take a Quiz</Link>
+    </div>
+  );
+};
+
+export default HomePage;
+
+
+4. QUIZ PAGE :-
+
+// CreateQuizPage.jsx
+import React, { useState } from 'react';
+
+const CreateQuizPage = () => {
+  const [title, setTitle] = useState('');
+  const [questions, setQuestions] = useState([{ question: '', options: ['', '', '', ''], correctAnswer: '' }]);
+
+  const handleAddQuestion = () => {
+    setQuestions([...questions, { question: '', options: ['', '', '', ''], correctAnswer: '' }]);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const response = await fetch('/api/quizzes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, questions }),
+    });
+    // Handle response here
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Create a Quiz</h2>
+      <input
+        type="text"
+        placeholder="Quiz Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
+      {questions.map((q, index) => (
+        <div key={index}>
+          <input
+            type="text"
+            placeholder="Question"
+            value={q.question}
+            onChange={(e) => {
+              const newQuestions = [...questions];
+              newQuestions[index].question = e.target.value;
+              setQuestions(newQuestions);
+            }}
+            required
+          />
+          {q.options.map((option, i) => (
+            <input
+              key={i}
+              type="text"
+              placeholder={`Option ${i + 1}`}
+              value={option}
+              onChange={(e) => {
+                const newQuestions = [...questions];
+                newQuestions[index].options[i] = e.target.value;
+                setQuestions(newQuestions);
+              }}
+              required
+            />
+          ))}
+          <input
+            type="text"
+            placeholder="Correct Answer"
+            value={q.correctAnswer}
+            onChange={(e) => {
+              const newQuestions = [...questions];
+              newQuestions[index].correctAnswer = e.target.value;
+              setQuestions(newQuestions);
+            }}
+            required
+          />
+        </div>
+      ))}
+      <button type="button" onClick={handleAddQuestion}>Add Question</button>
+      <button type="submit">Submit Quiz</button>
+    </form>
+  );
+};
+
+export default CreateQuizPage;
+
+
+5.TAKE QUIZ PAGE :-
+// TakeQuizPage.jsx
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+
+const TakeQuizPage = () => {
+  const { id } = useParams();
+  const [quiz, setQuiz] = useState(null);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState([]);
+
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      const response = await fetch(`/api/quizzes/${id}`);
+      const data = await response.json();
+      setQuiz(data);
+    };
+
+    fetchQuiz();
+  }, [id]);
+
+  const handleAnswer = (answer) => {
+    setAnswers([...answers, answer]);
+    setCurrentQuestion(currentQuestion + 1);
+  };
+
+  if (!quiz) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>{quiz.title}</h2>
+      {currentQuestion < quiz.questions.length ? (
+        <div>
+          <h3>{quiz.questions[currentQuestion].question}</h3>
+          {quiz.questions[currentQuestion].options.map((option, index) => (
+            <button key={index} onClick={() => handleAnswer(option)}>
+              {option}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <QuizResultsPage quiz={quiz} answers={answers} />
+      )}
+    </div>
+  );
+};
+
+export default TakeQuizPage;
+
+
+6. QUIZ RESULT PAGE :-
+// QuizResultsPage.jsx
+import React from 'react';
+
+const QuizResultsPage = ({ quiz, answers }) => {
+  const correctAnswers = quiz.questions.map((q) => q.correctAnswer);
+  const score = answers.filter((answer, index) => answer === correctAnswers[index]).length;
+
+  return (
+    <div>
+      <h2>Your Score: {score} / {quiz.questions.length}</h2>
+      <h3>Correct Answers:</h3>
+      <ul>
+        {quiz.questions.map((q, index) => (
+          <li key={index}>
+            {q.question} - Correct Answer: {q.correctAnswer}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default QuizResultsPage;
+
+
+7. QUIZ LISTING PAGE
+// QuizListPage.jsx
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+
+const QuizListPage = () => {
+  const [quizzes, setQuizzes] = useState([]);
+
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      const response = await fetch('/api/quizzes');
+      const data = await response.json();
+      setQuizzes(data);
+    };
+
+    fetchQuizzes();
+  }, []);
+
+  return (
+    <div>
+      <h2>Available Quizzes</h2>
+      <ul>
+        {quizzes.map((quiz) => (
+          <li key={quiz._id}>
+            <Link to={`/take-quiz/${quiz._id}`}>{quiz.title}</Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default QuizListPage;
+
+
+8. USER AUTHENTICATION :-
+// Auth.jsx
+import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
+
+const Auth = ({ isRegister }) => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const history = useHistory();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`/api/auth/${isRegister ? 'register' : 'login'}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      history.push('/');
+    } else {
+      alert(data.message);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>{isRegister ? 'Register' : 'Login'}</h2>
+      <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+      <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      <button type="submit">{isRegister ? 'Register' : 'Login'}</button>
+    </form>
+  );
+};
+
+export default Auth;
