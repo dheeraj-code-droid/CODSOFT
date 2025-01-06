@@ -1,0 +1,29 @@
+Task 1 :- Build a simple chatbot that responds to user inputs based on predefined rules. Use if-else statements or pattern matching techniques to identify user queries and provide appropriate responses. This will give you a basic understanding of natural language processing and conversation flow.
+
+Code Implementation :-
+def chatbot():
+    print("Chatbot: Hi! I'm here to help. Type 'exit' to end the conversation.")
+    
+    while True:
+        # Get user input
+        user_input = input("You: ").strip().lower()
+        
+        # Exit condition
+        if user_input == "exit":
+            print("Chatbot: Goodbye! Have a great day!")
+            break
+        
+        # Responses based on user input
+        if "hello" in user_input or "hi" in user_input:
+            print("Chatbot: Hello! How can I assist you today?")
+        elif "how are you" in user_input:
+            print("Chatbot: I'm just a program, but I'm functioning as expected! How about you?")
+        elif "your name" in user_input:
+            print("Chatbot: I'm a simple chatbot. You can call me Bot!")
+        elif "help" in user_input:
+            print("Chatbot: Sure! Let me know what you need help with.")
+        elif "time" in user_input:
+            from datetime import datetime
+            print(f"Chatbot: The current time is {datetime.now().strftime('%H:%M:%S')}.")
+        else:
+            print("Chatbot: I'm sorry, I don't understand that. Could you rephrase?")
