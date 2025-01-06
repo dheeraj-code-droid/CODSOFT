@@ -1,0 +1,92 @@
+Task 3 :- Combine computer vision and natural language processing to build an image captioning AI. Use pre-trained image recognition models like VGG or ResNet to extract features from images, and then use a recurrent neural network (RNN) or transformer-based model to generate captions for those images.
+
+Code Implementation :-
+(i)	Import and setup
+
+import torch
+import torch.nn as nn
+import torchvision.models as models
+import torchvision.transforms as transforms
+from PIL import Image
+import nltk
+from nltk.translate.bleu_score import sentence_bleu
+
+(ii)	Feature Extractor
+
+class FeatureExtractor(nn.Module):
+    def __init__(self):
+        super(FeatureExtractor, self).__init__()
+        resnet = models.resnet50(pretrained=True)
+        self.features = nn.Sequential(*list(resnet.children())[:-1])
+        for param in self.features.parameters():
+            param.requires_grad = False
+
+    def forward(self, images):
+        return self.features(images).squeeze()
+
+
+
+
+(iii)	Caption Generator
+
+class CaptionGenerator(nn.Module):
+    def __init__(self, feature_dim, embed_dim, hidden_dim, vocab_size, num_layers=1):
+        super(CaptionGenerator, self).__init__()
+        self.embed = nn.Embedding(vocab_size, embed_dim)
+        self.lstm = nn.LSTM(embed_dim, hidden_dim, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, vocab_size)
+
+    def forward(self, features, captions):
+        embeddings = self.embed(captions)
+        inputs = torch.cat((features.unsqueeze(1), embeddings), dim=1)
+        hiddens, _ = self.lstm(inputs)
+        outputs = self.fc(hiddens)
+        return outputs
+
+(iv)	Preprocessing and Tokenization
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+def preprocess_image(image_path):
+    image = Image.open(image_path).convert("RGB")
+    return transform(image).unsqueeze(0)
+
+(v)	Training and Interface
+
+# Dummy training loop (actual implementation requires dataset and loss calculation)
+def train_model(feature_extractor, caption_generator, data_loader, optimizer, criterion):
+    feature_extractor.eval()  # Feature extractor is frozen
+    caption_generator.train()
+    
+    for images, captions in data_loader:
+        features = feature_extractor(images)
+        outputs = caption_generator(features, captions)
+        loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+# Caption generation (inference)
+def generate_caption(feature_extractor, caption_generator, image_path, vocab, max_length=20):
+    feature_extractor.eval()
+    caption_generator.eval()
+
+    image = preprocess_image(image_path)
+    features = feature_extractor(image)
+    captions = torch.tensor([vocab['<start>']]).unsqueeze(0)
+
+    result = []
+    for _ in range(max_length):
+        outputs = caption_generator(features, captions)
+        predicted = outputs.argmax(2)[:, -1]
+        word = vocab[predicted.item()]
+        result.append(word)
+        if word == '<end>':
+            break
+        captions = torch.cat((captions, predicted.unsqueeze(0)), dim=1)
+    
+    return " ".join(result)
